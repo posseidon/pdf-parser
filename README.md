@@ -1,31 +1,69 @@
-# My Python Project
+# Python Container Application
 
-## Overview
-This project is a Python application that includes core functionality defined in the `src/main.py` file. It is designed to be easily extensible and maintainable.
+This project is a Python application designed to run in a container for scalability. It includes all necessary files to build and run the application using Docker.
 
-## Installation
-To set up the project, clone the repository and install the required dependencies:
+## Project Structure
 
-```bash
-pip install -r requirements.txt
+```
+python-container-app
+├── src
+│   └── main.py
+├── requirements.txt
+├── Dockerfile
+├── .dockerignore
+└── README.md
 ```
 
-## Usage
-To run the application, execute the following command:
+## Getting Started
 
-```bash
-python src/main.py
+To get started with this project, follow the instructions below.
+
+### Prerequisites
+
+Make sure you have the following installed on your machine:
+
+- Docker
+- Python (for local development)
+
+### Installation
+
+1. Clone the repository:
+
+   ```
+   git clone <repository-url>
+   cd python-container-app
+   ```
+
+2. Install the required Python packages:
+
+   ```
+   pip install -r requirements.txt
+   ```
+
+### Building the Docker Image
+
+To build the Docker image for the application, run the following command in the project root directory:
+
+```
+docker build -t python-container-app .
 ```
 
-## Testing
-Unit tests for the application can be found in the `tests/test_main.py` file. To run the tests, use the following command:
+### Running the Application
 
-```bash
-pytest tests/test_main.py
+Once the image is built, you can run the application using:
+
+```
+docker run -p 5000:5000 python-container-app
 ```
 
-## Contributing
-Contributions are welcome! Please feel free to submit a pull request or open an issue for any suggestions or improvements.
+### Accessing the Application
 
-## License
-This project is licensed under the MIT License. See the LICENSE file for more details.
+After running the container, you can access the application at `http://localhost:5000`.
+
+### Contributing
+
+If you would like to contribute to this project, please fork the repository and submit a pull request.
+
+### License
+
+This project is licensed under the MIT License. See the LICENSE file for details.
