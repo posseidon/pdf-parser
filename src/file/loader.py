@@ -1,9 +1,13 @@
 from typing import List, Dict, Any, Optional
+import logging
 
 import threading
 import fitz  # PyMuPDF
 import PyPDF2
 import re
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class ParallelFileLoader:
     def __init__(self, filename, chunk_size=1024):
@@ -129,8 +133,7 @@ class ParallelFileLoader:
         }
 
 def clean_text(text):
-    """Clean and normalize extracted text for training."""
     text = re.sub(r'\s+', ' ', text)
     text = re.sub(r'[^\x20-\x7E]+', '', text)
     text = text.strip()
-    return text
+    return text.encode('utf-8', errors='ignore').decode('utf-8')

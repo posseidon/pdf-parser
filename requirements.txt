@@ -1,10 +1,15 @@
 # Core PDF processing libraries
 pytest
 pymupdf
+pyPDF2
+
+# Chromadb and vector databases
+chromadb
 
 # Machine Learning and NLP
-sentence-transformers==2.2.2
-transformers==4.35.2
-torch==2.1.1
-numpy==1.24.3
-scikit-learn==1.3.2
+sentence-transformers
+transformers
+torch
+numpy
+scikit-learn
+huggingface-hub
