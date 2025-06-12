@@ -1,20 +1,17 @@
 from typing import List, Dict, Any, Optional
-import logging
 
 import threading
 import fitz  # PyMuPDF
 import PyPDF2
 import re
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-class ParallelFileLoader:
+class PdfFileLoader:
     def __init__(self, filename, chunk_size=1024):
         self.filename = filename
         self.chunk_size = chunk_size
         self.chunks = []
         self.lock = threading.Lock()
+        self._text = None  # Store extracted text
 
     def _read_chunk(self, start, size):
         try:
@@ -74,30 +71,21 @@ class ParallelFileLoader:
             logger.error(f"Error extracting text with PyPDF2: {e}")
             return ""
 
-    def extract_text(self) -> str:
-        """Extract text from PDF using best available method"""
+    def extract_text(self):
+        """Extract text from PDF using best available method and store it."""
         text = self.extract_text_pymupdf(self.filename)
         if not text.strip():
             text = self.extract_text_pypdf2(self.filename)
-        return text
+        self._text = text
+        return self  # Enable chaining
 
-    def chunk_text(self, text: str) -> List[str]:
-        """Split text into overlapping chunks"""
-        sentences = text.split('. ')
-        chunks = []
-        current_chunk = ""
-        
-        for sentence in sentences:
-            if len(current_chunk + sentence) < self.chunk_size:
-                current_chunk += sentence + ". "
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence + ". "
-        
-        if current_chunk:
-            chunks.append(current_chunk.strip())
-        
+    def chunk_text(self) -> List[str]:
+        """Split stored text into chunks by sentence."""
+        if self._text is None:
+            raise ValueError("No text extracted. Call extract_text() first.")
+        # Split on sentence-ending punctuation followed by whitespace or end of string
+        sentences = re.split(r'(?<=[.!?])\s+', self._text)
+        chunks = [sentence.strip() for sentence in sentences if sentence.strip()]
         return chunks
 
     def parse_pdf_streams(self):
@@ -105,7 +93,6 @@ class ParallelFileLoader:
         doc = fitz.open(self.filename)
         text_stream = []
         image_stream = []
-        table_stream = []  # Table extraction is limited; see note below
         link_stream = []
 
         for page in doc:
@@ -122,18 +109,25 @@ class ParallelFileLoader:
             for link in page.get_links():
                 link_stream.append(link)
 
-            # Table extraction (PyMuPDF does not support table extraction directly)
-            # For tables, consider using pdfplumber or camelot
-
         return {
             "text": text_stream,
             "images": image_stream,
-            "tables": table_stream,
             "links": link_stream
         }
 
-def clean_text(text):
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'[^\x20-\x7E]+', '', text)
-    text = text.strip()
-    return text.encode('utf-8', errors='ignore').decode('utf-8')
+def clean_text(text_list):
+    """Clean and normalize extracted text for training.
+    Removes non-printable/control characters and newlines, but keeps UTF-8 (accented) characters.
+    """
+    cleaned = []
+    for text in text_list:
+        # Remove control characters except printable ones (keep UTF-8)
+        text = re.sub(r'[\x00-\x1F\x7F]+', ' ', text)
+        # Remove newlines
+        text = text.replace('\n', ' ').replace('\r', ' ')
+        # Collapse multiple spaces
+        text = re.sub(r'\s+', ' ', text)
+        text = text.strip()
+        if text:
+            cleaned.append(text)
+    return cleaned

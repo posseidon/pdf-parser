@@ -1,37 +1,77 @@
-from file.loader import ParallelFileLoader, clean_text
+from typing import Dict, Any
+
+from file.loader import PdfFileLoader, clean_text
+from file.topic  import Topic
 from sml.model import SmallLanguageModel
 from vector.store import VectorStore
 from datetime import datetime
 
-def parse_pdf_file(filename: str, loader: ParallelFileLoader) -> str:
+def parse_pdf_file(filename: str) -> str:
     """Parse the content of a file and return cleaned text."""
-    content = loader.extract_text()
-    return clean_text(content)
+    loader = PdfFileLoader(filename)
+    text = loader.extract_text().chunk_text()
+    return text
 
-def main():
-    filename = "tests/resources/Hungary_short_history.pdf"
+def ask_question(question: str, store: VectorStore, llm: SmallLanguageModel, n_results: int = 3) -> Dict[str, Any]:
+    """Answer a natural language question about the PDF"""
+    try:
+        # Search for relevant chunks
+        results = store.search(question, n_results=n_results)
+        
+        if not results:
+            return {"answer": "No relevant content found", "sources": []}
+        
+        # Combine top results as context
+        context = " ".join([result["text"] for result in results[:n_results]])
+        
+        # Get answer from language model
+        answer = llm.answer_question(question, context)
+        
+        return {
+            "answer": answer,
+            "sources": [
+                {
+                    "text": result["text"],
+                    "score": result["score"]
+                }
+                for result in results
+            ]
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
 
+def q_and_a(text: str, filename: str) -> Dict[str, Any]:
     llm = SmallLanguageModel()
-    loader = ParallelFileLoader(filename)
-
-    text = parse_pdf_file(filename, loader)
-    chunks = loader.chunk_text(text)
-
+    
     vector_store = VectorStore()
     collection_name = f"doc_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     vector_store.create_collection(collection_name)
-    metadata = [{"chunk_id": i, "filename": filename} for i in range(len(chunks))]
-    vector_store.add_documents(chunks, metadata)
+    metadata = [{"chunk_id": i, "filename": filename} for i in range(len(text))]
+    vector_store.add_documents(text, metadata)
 
-    results = vector_store.search("Mikor volt a honfoglalás?")
-    print(results)
-    
-    # answer3 = llm.answer_question("Mikor volt a honfoglalás?", file_content)
-    # answer4 = llm.answer_question("Kik alkották az első magyar kormányt?", file_content)
-    # print(answer3)
-    # print(answer4)
+    while True:
+        question = input("\nAsk a question (or 'quit' to exit): ")
+        
+        if question.lower() == 'quit':
+            break
+        else:
+            results = ask_question(question, vector_store, llm)
+            if "error" not in results:
+                print(f"\nAnswer: {results['answer']}")
+            else:
+                print(f"Error: {results['error']}")
 
-    
+def main():
+    filename = "tests/resources/Hungary_short_history.pdf"
+    text = parse_pdf_file(filename)
+    tp = Topic()
+    tp.fit(text)
+    result = tp.get_topics()
+    print(f"Identified topics: {result}")
+
+
+
 
 if __name__ == "__main__":
     main()

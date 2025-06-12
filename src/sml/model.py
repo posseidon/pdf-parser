@@ -2,7 +2,7 @@ from typing import List, Dict, Any, Optional
 
 import logging
 
-from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+from transformers import pipeline, AutoTokenizer, AutoModelForQuestionAnswering
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -13,36 +13,32 @@ logger = logging.getLogger(__name__)
 class SmallLanguageModel:
     """Wrapper for small language models optimized for limited resources"""
     
-    def __init__(self, model_name: str = "SZTAKI-HLT/hunbert-base-cc"):
-        self.model_name = model_name
+    def __init__(self, model_path: str = "deepset/xlm-roberta-base-squad2"):
+        self.model_path = model_path
         self.tokenizer = None
         self.model = None
         self.qa_pipeline = None
         self.load_model()
     
     def load_model(self):
-        """Load the small Hungarian language model"""
+        """Load the best available small Hungarian language model"""
         try:
-            # For question answering, use a Hungarian QA model if available
-            # Example: 'SZTAKI-HLT/hubertus-base-cc' or similar for Hungarian QA
+            logger.info(f"Loading multilingual QA model from {self.model_path}")
+
+            # Use a multilingual QA model that supports Hungarian (small and efficient)
             self.qa_pipeline = pipeline(
                 "question-answering",
-                model="mcsabai/huBert-fine-tuned-hungarian-squadv2",
-                tokenizer="mcsabai/huBert-fine-tuned-hungarian-squadv2",
+                model=self.model_path,
+                tokenizer=self.model_path,
                 device=-1  # Use CPU
             )
-            
-            # For text generation, use a Hungarian model if available
-            self.tokenizer = AutoTokenizer.from_pretrained("mcsabai/huBert-fine-tuned-hungarian-squadv2")
-            self.model = AutoModelForCausalLM.from_pretrained("mcsabai/huBert-fine-tuned-hungarian-squadv2")
-            
-            # Add padding token if it doesn't exist
-            if self.tokenizer.pad_token is None:
-                self.tokenizer.pad_token = self.tokenizer.eos_token
-                
-            logger.info("Hungarian models loaded successfully")
+
+            self.model = AutoModelForQuestionAnswering.from_pretrained(self.model_path)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+
+            logger.info("Multilingual (including Hungarian) QA model loaded successfully")
         except Exception as e:
-            logger.error(f"Error loading Hungarian models: {e}")
+            logger.error(f"Error loading models: {e}")
     
     def answer_question(self, question: str, context: str) -> str:
         """Answer a question based on provided context"""
