@@ -1,9 +1,13 @@
 from typing import List, Dict, Any, Optional
 
 import threading
+import logging
 import fitz  # PyMuPDF
 import PyPDF2
 import re
+
+# Set up a basic module level logger
+logger = logging.getLogger(__name__)
 
 class PdfFileLoader:
     def __init__(self, filename, chunk_size=1024):
