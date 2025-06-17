@@ -1,7 +1,7 @@
 # Core PDF processing libraries
 pytest
 pymupdf
-pyPDF2
+PyPDF2
 
 # Chromadb and vector databases
 chromadb
