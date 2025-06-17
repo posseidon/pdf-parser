@@ -13,7 +13,10 @@ class VectorStore:
         self.collection = None
     
     def create_collection(self, collection_name: str):
-        """Create or get a ChromaDB collection"""
+        """Create a new ChromaDB collection.
+
+        Any existing collection with the same name is deleted first.
+        """
         try:
             self.collection = self.client.delete_collection(collection_name)
         except:
