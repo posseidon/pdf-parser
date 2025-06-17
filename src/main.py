@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import List, Dict, Any
 
 from file.loader import PdfFileLoader, clean_text
 from file.topic  import Topic
@@ -6,7 +6,7 @@ from sml.model import SmallLanguageModel
 from vector.store import VectorStore
 from datetime import datetime
 
-def parse_pdf_file(filename: str) -> str:
+def parse_pdf_file(filename: str) -> List[str]:
     """Parse the content of a file and return cleaned text."""
     loader = PdfFileLoader(filename)
     text = loader.extract_text().chunk_text()
@@ -41,7 +41,7 @@ def ask_question(question: str, store: VectorStore, llm: SmallLanguageModel, n_r
     except Exception as e:
         return {"error": str(e)}
 
-def q_and_a(text: str, filename: str) -> Dict[str, Any]:
+def q_and_a(text: List[str], filename: str) -> None:
     llm = SmallLanguageModel()
     
     vector_store = VectorStore()
