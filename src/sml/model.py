@@ -45,12 +45,10 @@ class SmallLanguageModel:
         try:
             if not self.qa_pipeline:
                 return "Model not loaded"
-            
-
-            
-            result = self.qa_pipeline(question=question, context=context)
+                     
+            result = self.qa_pipeline(question, context)
             print(f"Question: {question}, Result: {result}")
-            return result["answer"]
+            return result.get('answer', 'No answer found')
         except Exception as e:
             logger.error(f"Error answering question: {e}")
             return "Unable to answer question"

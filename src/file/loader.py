@@ -68,7 +68,7 @@ class PdfFileLoader:
                 reader = PyPDF2.PdfReader(file)
                 text = ""
                 for page in reader.pages:
-                    text += page.extract_text()
+                    text += page.get_text()
             return text
         except Exception as e:
             logger.error(f"Error extracting text with PyPDF2: {e}")

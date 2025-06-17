@@ -71,7 +71,5 @@ def main():
     print(f"Identified topics: {result}")
 
 
-
-
 if __name__ == "__main__":
     main()
